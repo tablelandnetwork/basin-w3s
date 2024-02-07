@@ -30,11 +30,8 @@ func main() {
 	router.get("/api/v1/health", handlers.Health)
 
 	srv := &http.Server{
-		Addr:         fmt.Sprintf("0.0.0.0:%s", cfg.HTTP.Port),
-		WriteTimeout: time.Second * 15,
-		ReadTimeout:  time.Second * 15,
-		IdleTimeout:  time.Second * 60,
-		Handler:      router.r,
+		Addr:    fmt.Sprintf("0.0.0.0:%s", cfg.HTTP.Port),
+		Handler: router.r,
 	}
 
 	// Run our server in a goroutine so that it doesn't block.

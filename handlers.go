@@ -51,7 +51,12 @@ func (h *Handlers) Upload(rw http.ResponseWriter, r *http.Request) {
 		Shard: result.Shard.String(),
 	}
 
-	bytes, _ := json.Marshal(response)
+	bytes, err := json.Marshal(response)
+	if err != nil {
+		slog.Error("json marshaling", err)
+		rw.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 	_, _ = rw.Write(bytes)
 }
 

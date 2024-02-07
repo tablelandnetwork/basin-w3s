@@ -249,15 +249,11 @@ func newW3sclient(sk string, proofBytes []byte) (*w3sclient, error) {
 }
 
 func (c *w3sclient) upload(root cid.Cid, dest string) (cid.Cid, error) {
+	// no need to close the file here, because the http client will do.
 	f, err := os.Open(fmt.Sprintf("%s.car", dest))
 	if err != nil {
 		return cid.Undef, err
 	}
-	defer func() {
-		if err := f.Close(); err != nil {
-			slog.Error("close file", err)
-		}
-	}()
 
 	stat, err := f.Stat()
 	if err != nil {
@@ -297,7 +293,6 @@ func (c *w3sclient) upload(root cid.Cid, dest string) (cid.Cid, error) {
 		for k, v := range rcpt.Out().Ok().Headers.Values {
 			hdr[k] = []string{v}
 		}
-
 		hr.Header = hdr
 		hr.ContentLength = int64(size)
 		httpClient := http.Client{
