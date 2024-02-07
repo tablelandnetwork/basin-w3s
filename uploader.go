@@ -34,7 +34,7 @@ import (
 )
 
 // SpaceID is the id of a Web3 Storage space.
-const SpaceID = "did:key:z6Mkv4YhtLqTKWis8KfLWGhUEcHFPYgH97BrCZia7xsUxMWj"
+const SpaceID = "did:key:z6MkfKyf5T9keTQqNpYpSPasLi7WSvzy1SmT5gvYZSPEVLpp"
 
 // w3s interface to make it easier to mock w3s.
 type w3s interface {
@@ -276,6 +276,10 @@ func (c *w3sclient) upload(root cid.Cid, dest string) (cid.Cid, error) {
 	)
 	if err != nil {
 		return cid.Undef, err
+	}
+
+	if rcpt.Out().Error() != nil {
+		return cid.Undef, fmt.Errorf(rcpt.Out().Error().Message)
 	}
 
 	if rcpt.Out().Ok().Status == "upload" {
