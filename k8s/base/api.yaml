@@ -49,8 +49,9 @@ spec:
                 name: configmap-basin-w3s
           resources:
             requests:
-              cpu: 250m
-              memory: 512Mi
+              cpu: 500m
+              ephemeral-storage: 2Gi
+              memory: 1Gi
           readinessProbe:
             httpGet:
               path: /api/v1/health
