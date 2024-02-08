@@ -32,9 +32,6 @@ import (
 	w3sdelegation "github.com/web3-storage/go-w3up/delegation"
 )
 
-// SpaceID is the id of a Web3 Storage space.
-const SpaceID = "did:key:z6MkfKyf5T9keTQqNpYpSPasLi7WSvzy1SmT5gvYZSPEVLpp"
-
 // w3s interface to make it easier to mock w3s.
 type w3s interface {
 	upload(cid.Cid, string) (cid.Cid, error)
@@ -53,8 +50,8 @@ type UploadResult struct {
 }
 
 // NewUploader returns a new uploader.
-func NewUploader(sk string, proofBytes []byte, tmpDir string) (*Uploader, error) {
-	client, err := newW3sclient(sk, proofBytes)
+func NewUploader(spaceID string, sk string, proofBytes []byte, tmpDir string) (*Uploader, error) {
+	client, err := newW3sclient(spaceID, sk, proofBytes)
 	if err != nil {
 		return nil, fmt.Errorf("creating new w3s client: %s", err)
 	}
@@ -224,7 +221,7 @@ type w3sclient struct {
 	proof  delegation.Delegation
 }
 
-func newW3sclient(sk string, proofBytes []byte) (*w3sclient, error) {
+func newW3sclient(spaceID string, sk string, proofBytes []byte) (*w3sclient, error) {
 	// private key to sign UCAN invocations with
 	issuer, err := signer.Parse(sk)
 	if err != nil {
@@ -237,7 +234,7 @@ func newW3sclient(sk string, proofBytes []byte) (*w3sclient, error) {
 		return nil, fmt.Errorf("failed to extract proof: %s", err)
 	}
 
-	space, err := did.Parse(SpaceID)
+	space, err := did.Parse(spaceID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse space id: %s", err)
 	}

@@ -68,7 +68,7 @@ func initHandlers(cfg *config) (*Handlers, error) {
 		return nil, err
 	}
 
-	uploader, err := NewUploader(cfg.PrivateKey, proof, cfg.TMPDIR)
+	uploader, err := NewUploader(cfg.SpaceID, cfg.PrivateKey, proof, cfg.TmpDir)
 	if err != nil {
 		return nil, err
 	}
