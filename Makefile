@@ -12,6 +12,7 @@ run:
 	@HTTP_PORT=8081 \
 	PRIVATEKEY=$(shell cat ${pk_file}) \
 	PROOF=$(shell cat ${proof_file} | xxd -p | tr -d '\n') \
+	SPACEID=did:key:z6MkfKyf5T9keTQqNpYpSPasLi7WSvzy1SmT5gvYZSPEVLpp \
 	go run .
 .PHONY: run
 
