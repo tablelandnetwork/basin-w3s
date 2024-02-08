@@ -36,6 +36,9 @@ func (h *Handlers) Upload(rw http.ResponseWriter, r *http.Request) {
 		if err := f.Close(); err != nil {
 			slog.Error("close file", err)
 		}
+		if err := r.MultipartForm.RemoveAll(); err != nil {
+			slog.Error("removing tmp files", err)
+		}
 	}()
 
 	result, err := h.uploader.Upload(r.Context(), f)
