@@ -11,11 +11,11 @@ type config struct {
 	HTTP       struct {
 		Port string `default:"8080"`
 	}
-
 	Log struct {
 		Human bool `default:"false"`
 		Debug bool `default:"false"`
 	}
+	TMPDIR string `default:"/tmp"`
 }
 
 func initConfig() (*config, error) {

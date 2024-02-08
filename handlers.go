@@ -4,7 +4,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"net/http"
-	"os"
 
 	"golang.org/x/exp/slog"
 )
@@ -66,7 +65,7 @@ func initHandlers(cfg *config) (*Handlers, error) {
 		return nil, err
 	}
 
-	uploader, err := NewUploader(cfg.PrivateKey, proof, os.TempDir())
+	uploader, err := NewUploader(cfg.PrivateKey, proof, cfg.TMPDIR)
 	if err != nil {
 		return nil, err
 	}

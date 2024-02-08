@@ -1,3 +1,13 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: ephemeral-ssd
+provisioner: pd.csi.storage.gke.io
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: true
+parameters:
+  type: pd-standard
+---
 apiVersion: v1
 kind: Service
 metadata:
@@ -50,7 +60,6 @@ spec:
           resources:
             requests:
               cpu: 500m
-              ephemeral-storage: 2Gi
               memory: 1Gi
           readinessProbe:
             httpGet:
@@ -66,3 +75,19 @@ spec:
             initialDelaySeconds: 15
             periodSeconds: 20
             failureThreshold: 3
+          volumeMounts:
+          - mountPath: "/tmp"
+            name: tmp-volume
+      volumes:
+        - name: tmp-volume
+          ephemeral:
+            volumeClaimTemplate:
+              metadata:
+                labels:
+                  type: tmp-volume
+              spec:
+                accessModes: [ "ReadWriteOnce" ]
+                storageClassName: "ephemeral-ssd"
+                resources:
+                  requests:
+                    storage: 20Gi
