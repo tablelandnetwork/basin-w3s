@@ -30,11 +30,7 @@ import (
 	"github.com/web3-storage/go-w3up/client"
 	"github.com/web3-storage/go-w3up/cmd/util"
 	w3sdelegation "github.com/web3-storage/go-w3up/delegation"
-	"golang.org/x/exp/slog"
 )
-
-// SpaceID is the id of a Web3 Storage space.
-const SpaceID = "did:key:z6Mkv4YhtLqTKWis8KfLWGhUEcHFPYgH97BrCZia7xsUxMWj"
 
 // w3s interface to make it easier to mock w3s.
 type w3s interface {
@@ -54,8 +50,8 @@ type UploadResult struct {
 }
 
 // NewUploader returns a new uploader.
-func NewUploader(sk string, proofBytes []byte, tmpDir string) (*Uploader, error) {
-	client, err := newW3sclient(sk, proofBytes)
+func NewUploader(spaceID string, sk string, proofBytes []byte, tmpDir string) (*Uploader, error) {
+	client, err := newW3sclient(spaceID, sk, proofBytes)
 	if err != nil {
 		return nil, fmt.Errorf("creating new w3s client: %s", err)
 	}
@@ -66,14 +62,14 @@ func NewUploader(sk string, proofBytes []byte, tmpDir string) (*Uploader, error)
 }
 
 // Upload uploads the content of a io.Reader.
-func (u *Uploader) Upload(ctx context.Context, r io.Reader) (UploadResult, error) {
+func (u *Uploader) Upload(ctx context.Context, r io.Reader) (_ UploadResult, err error) {
 	dest, err := u.saveTmp(r)
 	if err != nil {
 		return UploadResult{}, fmt.Errorf("failed saving into tmp: %s", err)
 	}
 	defer func() {
-		if err := u.removeTmp(dest); err != nil {
-			slog.Error("failed to remove tmp file", err)
+		if cErr := u.removeTmp(dest); err == nil {
+			err = cErr
 		}
 	}()
 
@@ -93,7 +89,7 @@ func (u *Uploader) Upload(ctx context.Context, r io.Reader) (UploadResult, error
 	}, nil
 }
 
-func (u *Uploader) saveTmp(r io.Reader) (string, error) {
+func (u *Uploader) saveTmp(r io.Reader) (_ string, err error) {
 	randBytes := make([]byte, 16)
 	_, _ = rand.Read(randBytes)
 	dest := filepath.Join(u.tmpDir, hex.EncodeToString(randBytes))
@@ -103,8 +99,9 @@ func (u *Uploader) saveTmp(r io.Reader) (string, error) {
 		return "", err
 	}
 	defer func() {
-		if err := f.Close(); err != nil {
-			slog.Error("close file", err)
+		// Close file and override return error type if it is nil.
+		if cerr := f.Close(); err == nil {
+			err = cerr
 		}
 	}()
 
@@ -163,7 +160,7 @@ func (*Uploader) removeTmp(dest string) error {
 	return nil
 }
 
-func writeFile(ctx context.Context, bs *blockstore.ReadWrite, path string) (cid.Cid, uint64, error) {
+func writeFile(ctx context.Context, bs *blockstore.ReadWrite, path string) (_ cid.Cid, sz uint64, err error) {
 	ls := cidlink.DefaultLinkSystem()
 	ls.TrustedStorage = true
 	ls.StorageReadOpener = func(_ ipld.LinkContext, l ipld.Link) (io.Reader, error) {
@@ -200,8 +197,9 @@ func writeFile(ctx context.Context, bs *blockstore.ReadWrite, path string) (cid.
 		return cid.Undef, 0, err
 	}
 	defer func() {
-		if err := f.Close(); err != nil {
-			slog.Error("close file", err)
+		// Close file and override return error type if it is nil.
+		if cerr := f.Close(); err == nil {
+			err = cerr
 		}
 	}()
 
@@ -223,7 +221,7 @@ type w3sclient struct {
 	proof  delegation.Delegation
 }
 
-func newW3sclient(sk string, proofBytes []byte) (*w3sclient, error) {
+func newW3sclient(spaceID string, sk string, proofBytes []byte) (*w3sclient, error) {
 	// private key to sign UCAN invocations with
 	issuer, err := signer.Parse(sk)
 	if err != nil {
@@ -236,7 +234,7 @@ func newW3sclient(sk string, proofBytes []byte) (*w3sclient, error) {
 		return nil, fmt.Errorf("failed to extract proof: %s", err)
 	}
 
-	space, err := did.Parse(SpaceID)
+	space, err := did.Parse(spaceID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse space id: %s", err)
 	}
@@ -248,8 +246,8 @@ func newW3sclient(sk string, proofBytes []byte) (*w3sclient, error) {
 	}, nil
 }
 
-func (c *w3sclient) upload(root cid.Cid, dest string) (cid.Cid, error) {
-	// no need to close the file here, because the http client will do.
+func (c *w3sclient) upload(root cid.Cid, dest string) (_ cid.Cid, err error) {
+	// no need to close the file because the http client is doing that
 	f, err := os.Open(fmt.Sprintf("%s.car", dest))
 	if err != nil {
 		return cid.Undef, err
@@ -276,6 +274,10 @@ func (c *w3sclient) upload(root cid.Cid, dest string) (cid.Cid, error) {
 	)
 	if err != nil {
 		return cid.Undef, err
+	}
+
+	if rcpt.Out().Error() != nil {
+		return cid.Undef, fmt.Errorf(rcpt.Out().Error().Message)
 	}
 
 	if rcpt.Out().Ok().Status == "upload" {

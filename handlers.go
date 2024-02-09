@@ -1,10 +1,11 @@
 package main
 
 import (
+	"bufio"
 	"encoding/hex"
 	"encoding/json"
+	"io"
 	"net/http"
-	"os"
 
 	"golang.org/x/exp/slog"
 )
@@ -12,6 +13,7 @@ import (
 // Handlers groups a bunch of HTTP handlers.
 type Handlers struct {
 	uploader *Uploader
+	tmpDir   string
 }
 
 // UploadResponse ...
@@ -27,19 +29,26 @@ func (h *Handlers) Health(rw http.ResponseWriter, _ *http.Request) {
 
 // Upload handles POST /api/v1/upload.
 func (h *Handlers) Upload(rw http.ResponseWriter, r *http.Request) {
-	f, _, err := r.FormFile("file")
+	reader, err := r.MultipartReader()
 	if err != nil {
-		slog.Error("form file", err)
-		rw.WriteHeader(http.StatusInternalServerError)
+		http.Error(rw, err.Error(), http.StatusBadRequest)
 		return
 	}
-	defer func() {
-		if err := f.Close(); err != nil {
-			slog.Error("close file", err)
-		}
-	}()
 
-	result, err := h.uploader.Upload(r.Context(), f)
+	// parse file field
+	p, err := reader.NextPart()
+	if err != nil && err != io.EOF {
+		http.Error(rw, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if p.FormName() != "file" {
+		http.Error(rw, "file is expected", http.StatusBadRequest)
+		return
+	}
+
+	buf := bufio.NewReader(p)
+	result, err := h.uploader.Upload(r.Context(), buf)
 	if err != nil {
 		slog.Error("file upload", err)
 		rw.WriteHeader(http.StatusInternalServerError)
@@ -66,12 +75,13 @@ func initHandlers(cfg *config) (*Handlers, error) {
 		return nil, err
 	}
 
-	uploader, err := NewUploader(cfg.PrivateKey, proof, os.TempDir())
+	uploader, err := NewUploader(cfg.SpaceID, cfg.PrivateKey, proof, cfg.TmpDir)
 	if err != nil {
 		return nil, err
 	}
 
 	return &Handlers{
 		uploader: uploader,
+		tmpDir:   cfg.TmpDir,
 	}, nil
 }

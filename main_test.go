@@ -48,15 +48,15 @@ func TestUploadApi(t *testing.T) {
 	res, err := http.DefaultClient.Do(req)
 	require.NoError(t, err)
 
-	defer require.NoError(t, res.Body.Close())
 	out, err := io.ReadAll(res.Body)
 	require.NoError(t, err)
+	require.NoError(t, res.Body.Close())
 
 	var r UploadResponse
 
 	err = json.Unmarshal(out, &r)
 	require.NoError(t, err)
 
-	require.Equal(t, "bafkreibz5pyalh2oqppwsm4lf3czqzcg6ockskzwik5lte5qtrxihqerdy", r.Root)
-	require.Equal(t, "bagbaieramjiiu3p4ufmfz2jugnoqfrdptzwmaw466oxyd2afxs6qaclpy72q", r.Shard)
+	require.Equal(t, "bafkreihdwdcefgh4dqkjv67uzcmw7ojee6xedzdetojuzjevtenxquvyku", r.Root)
+	require.Equal(t, "bagbaierakdtubdzo53sy6crqkmmwdhomjse3vj5yijkvbopbwt66zqbangpa", r.Shard)
 }

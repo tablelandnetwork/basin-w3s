@@ -7,15 +7,16 @@ import (
 
 type config struct {
 	PrivateKey string `default:""`
+	SpaceID    string `default:""`
 	Proof      string `default:""`
 	HTTP       struct {
 		Port string `default:"8080"`
 	}
-
 	Log struct {
 		Human bool `default:"false"`
 		Debug bool `default:"false"`
 	}
+	TmpDir string `default:"/tmp"`
 }
 
 func initConfig() (*config, error) {
