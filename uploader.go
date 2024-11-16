@@ -293,6 +293,9 @@ func (c *w3sclient) upload(root cid.Cid, dest string) (_ cid.Cid, err error) {
 
 		hdr := map[string][]string{}
 		for k, v := range rcpt.Out().Ok().Headers.Values {
+			if k == "content-length" {
+				continue
+			}
 			hdr[k] = []string{v}
 		}
 		hr.Header = hdr
