@@ -262,8 +262,8 @@ github.com/warpfork/go-wish v0.0.0-20220906213052-39a1cc7a02d0 h1:GDDkbFiaK8jsSD
 github.com/warpfork/go-wish v0.0.0-20220906213052-39a1cc7a02d0/go.mod h1:x6AKhvSSexNrVSrViXSHUEbICjmGXhtgABaHIySUSGw=
 github.com/web3-storage/go-ucanto v0.1.0 h1:Hg6jO7OLLeDLtmseQZWQGBFJMp+5t5OWAFVL5Y3LsOs=
 github.com/web3-storage/go-ucanto v0.1.0/go.mod h1:XD6zahQ8HLh8Z2CSK7xYcTR0A7oCVYXTZB7fFtYqGF8=
-github.com/web3-storage/go-w3up v0.0.2 h1:MhGPNSaZZKxsIoARj83TwIjFVwtz7r7r67R4aD3maDA=
-github.com/web3-storage/go-w3up v0.0.2/go.mod h1:GGTPPHhc44LW6jCZlsXQtjn653rPzJJtN78XyJDnXTE=
+github.com/web3-storage/go-w3up v0.0.3 h1:zSyj+TSh7gxCZffhMN7m4E6t6XhIEGkq7bRb+khpAug=
+github.com/web3-storage/go-w3up v0.0.3/go.mod h1:GGTPPHhc44LW6jCZlsXQtjn653rPzJJtN78XyJDnXTE=
 github.com/whyrusleeping/cbor v0.0.0-20171005072247-63513f603b11 h1:5HZfQkwe0mIfyDmc1Em5GqlNRzcdtlv4HTNmdpt7XH0=
 github.com/whyrusleeping/cbor v0.0.0-20171005072247-63513f603b11/go.mod h1:Wlo/SzPmxVp6vXpGt/zaXhHH0fn4IxgqZc82aKg6bpQ=
 github.com/whyrusleeping/cbor-gen v0.0.0-20230818171029-f91ae536ca25 h1:yVYDLoN2gmB3OdBXFW8e1UwgVbmCvNlnAKhvHPaNARI=
