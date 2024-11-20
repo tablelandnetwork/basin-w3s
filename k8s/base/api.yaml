@@ -29,7 +29,7 @@ metadata:
   labels:
     app: basin-w3s
 spec:
-  replicas: 2
+  replicas: 3
   selector:
     matchLabels:
       app: basin-w3s-v1
@@ -60,7 +60,8 @@ spec:
           resources:
             requests:
               cpu: 500m
-              memory: 1Gi
+              memory: 4Gi
+              ephemeral-storage: 10Gi
           readinessProbe:
             httpGet:
               path: /api/v1/health
@@ -90,4 +91,4 @@ spec:
                 storageClassName: "ephemeral-ssd"
                 resources:
                   requests:
-                    storage: 20Gi
+                    storage: 500Gi
