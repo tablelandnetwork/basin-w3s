@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"strings"
 	"testing"
@@ -11,6 +10,9 @@ import (
 	_ "github.com/ipfs/go-unixfsnode/file"
 	"github.com/ipld/go-car/v2/blockstore"
 	"github.com/ipld/go-car/v2/storage"
+	"github.com/ipld/go-ipld-prime"
+	cidlink "github.com/ipld/go-ipld-prime/linking/cid"
+	"github.com/multiformats/go-multihash"
 	"github.com/stretchr/testify/require"
 )
 
@@ -29,7 +31,7 @@ func TestUploader(t *testing.T) {
 	_, err = os.Stat(client.dest)
 	require.True(t, os.IsNotExist(err))
 
-	_, err = os.Stat(fmt.Sprintf("%s.car", client.dest))
+	_, err = os.Stat(client.dest)
 	require.True(t, os.IsNotExist(err))
 }
 
@@ -38,7 +40,7 @@ type mockClient struct {
 	dest string
 }
 
-func (c *mockClient) upload(_ cid.Cid, dest string) (cid.Cid, error) {
+func (c *mockClient) upload(_ cid.Cid, dest string) (cid.Cid, []ipld.Link, error) {
 	c.dest = dest
 
 	// check tmp file exists
@@ -46,15 +48,20 @@ func (c *mockClient) upload(_ cid.Cid, dest string) (cid.Cid, error) {
 	require.NoError(c.t, err)
 
 	// check tmp car file exists
-	_, err = os.Stat(fmt.Sprintf("%s.car", dest))
+	_, err = os.Stat(dest)
 	require.NoError(c.t, err)
 
 	// check content being uploaded
-	content, err := extract(fmt.Sprintf("%s.car", dest))
+	content, err := extract(dest)
 	require.NoError(c.t, err)
 	require.Equal(c.t, "Hello", content)
 
-	return cid.Cid{}, nil
+	hash, err := multihash.Sum([]byte{}, multihash.SHA2_256, -1)
+	require.NoError(c.t, err)
+
+	cid := cid.NewCidV1(cid.Raw, hash)
+
+	return cid, []ipld.Link{cidlink.Link{Cid: cid}}, nil
 }
 
 func extract(filename string) (string, error) {
