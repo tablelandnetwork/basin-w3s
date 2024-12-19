@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"strings"
 	"testing"
@@ -32,7 +31,7 @@ func TestUploader(t *testing.T) {
 	_, err = os.Stat(client.dest)
 	require.True(t, os.IsNotExist(err))
 
-	_, err = os.Stat(fmt.Sprintf("%s.car", client.dest))
+	_, err = os.Stat(client.dest)
 	require.True(t, os.IsNotExist(err))
 }
 
@@ -49,11 +48,11 @@ func (c *mockClient) upload(_ cid.Cid, dest string) (cid.Cid, []ipld.Link, error
 	require.NoError(c.t, err)
 
 	// check tmp car file exists
-	_, err = os.Stat(fmt.Sprintf("%s.car", dest))
+	_, err = os.Stat(dest)
 	require.NoError(c.t, err)
 
 	// check content being uploaded
-	content, err := extract(fmt.Sprintf("%s.car", dest))
+	content, err := extract(dest)
 	require.NoError(c.t, err)
 	require.Equal(c.t, "Hello", content)
 

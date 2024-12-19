@@ -64,17 +64,18 @@ func NewUploader(spaceID string, sk string, proofBytes []byte, tmpDir string) (*
 
 // Upload uploads the content of a io.Reader.
 func (u *Uploader) Upload(ctx context.Context, r io.Reader) (_ UploadResult, err error) {
-	dest, err := u.saveTmp(r)
-	if err != nil {
-		return UploadResult{}, fmt.Errorf("failed saving into tmp: %s", err)
-	}
+	randBytes := make([]byte, 16)
+	_, _ = rand.Read(randBytes)
+	dest := filepath.Join(u.tmpDir, hex.EncodeToString(randBytes))
+	dest = fmt.Sprintf("%s.car", dest)
+
 	defer func() {
 		if cErr := u.removeTmp(dest); err == nil {
 			err = cErr
 		}
 	}()
 
-	root, err := u.createCar(ctx, dest)
+	root, err := u.createCar(ctx, dest, r)
 	if err != nil {
 		return UploadResult{}, fmt.Errorf("failed generating CAR: %s", err)
 	}
@@ -90,30 +91,7 @@ func (u *Uploader) Upload(ctx context.Context, r io.Reader) (_ UploadResult, err
 	}, nil
 }
 
-func (u *Uploader) saveTmp(r io.Reader) (_ string, err error) {
-	randBytes := make([]byte, 16)
-	_, _ = rand.Read(randBytes)
-	dest := filepath.Join(u.tmpDir, hex.EncodeToString(randBytes))
-
-	f, err := os.Create(dest)
-	if err != nil {
-		return "", err
-	}
-	defer func() {
-		// Close file and override return error type if it is nil.
-		if cerr := f.Close(); err == nil {
-			err = cerr
-		}
-	}()
-
-	if _, err := io.Copy(f, r); err != nil {
-		return "", err
-	}
-
-	return dest, nil
-}
-
-func (u *Uploader) createCar(ctx context.Context, dest string) (cid.Cid, error) {
+func (u *Uploader) createCar(ctx context.Context, dest string, r io.Reader) (cid.Cid, error) {
 	hasher, err := multihash.GetHasher(multihash.SHA2_256)
 	if err != nil {
 		return cid.Cid{}, err
@@ -126,14 +104,14 @@ func (u *Uploader) createCar(ctx context.Context, dest string) (cid.Cid, error) 
 	proxyRoot := cid.NewCidV1(uint64(multicodec.DagPb), hash)
 
 	cdest, err := blockstore.OpenReadWrite(
-		fmt.Sprintf("%s.car", dest), []cid.Cid{proxyRoot}, []car.Option{blockstore.WriteAsCarV1(true)}...,
+		dest, []cid.Cid{proxyRoot}, []car.Option{blockstore.WriteAsCarV1(true)}...,
 	)
 	if err != nil {
 		return cid.Cid{}, err
 	}
 
 	// Write the unixfs blocks into the store.
-	root, _, err := writeFile(ctx, cdest, dest)
+	root, _, err := writeFile(ctx, cdest, r)
 	if err != nil {
 		return cid.Cid{}, err
 	}
@@ -142,7 +120,7 @@ func (u *Uploader) createCar(ctx context.Context, dest string) (cid.Cid, error) 
 		return cid.Cid{}, err
 	}
 	// re-open/finalize with the final root.
-	if err := car.ReplaceRootsInFile(fmt.Sprintf("%s.car", dest), []cid.Cid{root}); err != nil {
+	if err := car.ReplaceRootsInFile(dest, []cid.Cid{root}); err != nil {
 		return cid.Cid{}, err
 	}
 
@@ -153,15 +131,10 @@ func (*Uploader) removeTmp(dest string) error {
 	if err := os.Remove(dest); err != nil {
 		return fmt.Errorf("failed to remove file: %s", err)
 	}
-
-	if err := os.Remove(fmt.Sprintf("%s.car", dest)); err != nil {
-		return fmt.Errorf("failed to remove car file: %s", err)
-	}
-
 	return nil
 }
 
-func writeFile(ctx context.Context, bs *blockstore.ReadWrite, path string) (_ cid.Cid, sz uint64, err error) {
+func writeFile(ctx context.Context, bs *blockstore.ReadWrite, reader io.Reader) (_ cid.Cid, sz uint64, err error) {
 	ls := cidlink.DefaultLinkSystem()
 	ls.TrustedStorage = true
 	ls.StorageReadOpener = func(_ ipld.LinkContext, l ipld.Link) (io.Reader, error) {
@@ -193,18 +166,7 @@ func writeFile(ctx context.Context, bs *blockstore.ReadWrite, path string) (_ ci
 		}, nil
 	}
 
-	f, err := os.Open(path)
-	if err != nil {
-		return cid.Undef, 0, err
-	}
-	defer func() {
-		// Close file and override return error type if it is nil.
-		if cerr := f.Close(); err == nil {
-			err = cerr
-		}
-	}()
-
-	l, size, err := builder.BuildUnixFSFile(f, "", &ls)
+	l, size, err := builder.BuildUnixFSFile(reader, "", &ls)
 	if err != nil {
 		return cid.Undef, 0, err
 	}
@@ -249,7 +211,7 @@ func newW3sclient(spaceID string, sk string, proofBytes []byte) (*w3sclient, err
 
 func (c *w3sclient) upload(root cid.Cid, dest string) (_ cid.Cid, _ []ipld.Link, err error) {
 	// no need to close the file because the http client is doing that
-	f, err := os.Open(fmt.Sprintf("%s.car", dest))
+	f, err := os.Open(dest)
 	if err != nil {
 		return cid.Undef, []ipld.Link{}, err
 	}
