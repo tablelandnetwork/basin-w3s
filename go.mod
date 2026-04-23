@@ -14,7 +14,7 @@ require (
 	github.com/multiformats/go-multicodec v0.9.0
 	github.com/multiformats/go-multihash v0.2.3
 	github.com/omeid/uconfig v0.5.0
-	github.com/stretchr/testify v1.8.4
+	github.com/stretchr/testify v1.11.1
 	github.com/web3-storage/go-ucanto v0.1.0
 	github.com/web3-storage/go-w3up v0.0.3
 	golang.org/x/exp v0.0.0-20230213192124-5e25df0256eb
